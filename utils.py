@@ -11,12 +11,11 @@ import collections
 from subprocess import call
 import subprocess
 import sys
-from blessings import Terminal
+from blessed import Terminal
 import signal
 
 import err
-import fileOps as fops
-
+import fileops as fops
 
 def pairwise(iterable):
     '''s -> (s0,s1), (s1,s2), (s2, s3), ...'''
