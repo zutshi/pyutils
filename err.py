@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 
 
-import blessed
+from blessed import Terminal
 
-term = blessed.Terminal()
+term = Terminal()
 
 
 class Fatal(Exception):
@@ -13,7 +13,7 @@ class Fatal(Exception):
 
 
 def error(msg):
-    print 'ERROR: ' + msg
+    print term.red('ERROR: ' + msg)
     exit(-1)
 
 
