@@ -3,9 +3,12 @@
 
 import logging
 import numpy as np
-import err
 
 logger = logging.getLogger(__name__)
+
+
+class ConstraintsError(Exception):
+    pass
 
 
 class Constraints(object):
@@ -18,8 +21,9 @@ class IntervalCons(Constraints):
 
     def __init__(self, l, h):
         if type(h) != np.ndarray or type(l) != np.ndarray:
-            raise err.Fatal('interval constraints should be expressed as np.ndarray expected'
-                            )
+            raise ConstraintsError(
+                    'interval constraints should be expressed as np.ndarray expected'
+                    )
         self.h = h
         self.l = l
         self.dim = len(self.l)
@@ -34,15 +38,15 @@ class IntervalCons(Constraints):
                 # # ##!!##logger.debug('IntervalCons sanity check failure!: l > h')
                 # # ##!!##logger.debug('l = {}, h = {}'.format(self.l, self.h))
 
-                raise err.Fatal('malformed interval!')
+                raise ConstraintsError('malformed interval!')
         if len(self.l) != len(self.h):
-            raise err.Fatal('dimension mismatch between bounds!')
+            raise ConstraintsError('dimension mismatch between bounds!')
 
     def dim(self):
         return len(self.h)
 
     def scaleNround(self, CONVERSION_FACTOR):
-        raise err.Fatal('#$%^$&#%#&%$^$%^$^#!@$')
+        raise ConstraintsError('#$%^$&#%#&%$^$%^$^#!@$')
 
         # do not do inplace conversion, instead return a copy!
         # self.h = (self.h * CONVERSION_FACTOR).astype(int)
@@ -101,8 +105,9 @@ class IntervalCons(Constraints):
         # check dimensions
 
         if self.dim != ic.dim:
-            raise err.Fatal('intersection of interval constraints: must be of same dimensions!'
-                            )
+            raise ConstraintsError(
+                    'intersection of interval constraints: must be of same dimensions!'
+                    )
 
 #       use max/min instead of case check!
 
@@ -110,7 +115,7 @@ class IntervalCons(Constraints):
         h = np.minimum(self.h, ic.h)
         try:
             return IntervalCons(l, h)
-        except err.Fatal:
+        except ConstraintsError:
             return None
 
     # must return True or False
@@ -119,7 +124,7 @@ class IntervalCons(Constraints):
     def __contains__(self, x):
 
         if x.ndim != 1:
-            raise err.Fatal('dim(x) must be 1, instead dim(x) = {}'.format(x.ndim))
+            raise ConstraintsError('dim(x) must be 1, instead dim(x) = {}'.format(x.ndim))
 
         # print x.shape, x
 
@@ -153,6 +158,15 @@ class IntervalCons(Constraints):
         C = np.vstack([np.eye(self.dim), -np.eye(self.dim)])
         d = np.hstack([self.h, -self.l])
         return C, d
+
+    def rect(self):
+        """Converts to rectangular representation.
+           Returns: (corner, length)
+           Useful for plotting with matplotlib
+        """
+        if self.dim != 2:
+            raise ConstraintsError('must be 2 dim for rect conversions')
+        return self.l, (self.h - self.l)
 
     def __repr__(self):
         return '{},{}'.format(str(self.l), str(self.h))
