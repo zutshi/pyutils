@@ -168,6 +168,11 @@ class IntervalCons(Constraints):
             raise ConstraintsError('must be 2 dim for rect conversions')
         return self.l, (self.h - self.l)
 
+    def sample_UR(self, N):
+        random_arr = np.random.rand(N, self.dim)
+        x_array = self.l + random_arr * (self.h - self.l)
+        return x_array
+
     def __repr__(self):
         return '{},{}'.format(str(self.l), str(self.h))
 
