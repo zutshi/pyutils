@@ -232,6 +232,9 @@ def pause(msg=''):
         prompt = '{}: {}'.format(msg, prompt)
     raw_input(prompt)
 
+def inf_list(x):
+    while True:
+        yield x
 
 def print(*args, **kwargs):
     """custom print() function."""
