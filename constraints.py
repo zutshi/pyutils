@@ -139,6 +139,16 @@ class IntervalCons(Constraints):
     # vecotirzed version of __contains__()
 
     def contains(self, x_array):
+        """contains
+
+        Parameters
+        ----------
+        x_array : array of state vectors
+
+        Returns
+        -------
+        TODO?
+        """
 
         # print x.shape, x
 
