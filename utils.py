@@ -35,11 +35,15 @@ def iterate_in_chunks(iterable, chunk_length):
 def strict_call(*args, **kwargs):
     ret_val = call(*args, **kwargs)
     if ret_val != 0:
-        raise err.Fatal('call() returned non-zero return value')
+        raise err.Fatal(
+        'call() returned non-zero return value: {}'.format(ret_val))
+
+
+class CallError(Exception):
+    pass
 
 
 # subprocess.check_output
-
 def strict_call_get_op(*args, **kwargs):
     try:
         op = subprocess.check_output(stderr=subprocess.STDOUT, *args, **kwargs)
@@ -56,13 +60,24 @@ def strict_call_get_op(*args, **kwargs):
         # print term.red(str(e.output))
 
         sys.stdout.flush()
-        raise
+        raise CallError(error_msg)
 
     # TODO: what is op?
     # print op
 
     return op
 
+def call_get_op(*args, **kwargs):
+    try:
+        op = subprocess.check_output(stderr=subprocess.STDOUT, *args, **kwargs)
+    except subprocess.CalledProcessError, e:
+        term = Terminal()
+
+        error_msg = e.output.decode('utf-8')
+        print(term.red(error_msg))
+        sys.stdout.flush()
+
+    return op
 
 class Unique(object):
 
