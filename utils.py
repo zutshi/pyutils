@@ -13,6 +13,7 @@ import subprocess
 import sys
 from blessed import Terminal
 import signal
+import numpy as np
 
 import err
 import fileops as fops
@@ -269,3 +270,20 @@ class timeout:
 
     def __exit__(self, type, value, traceback):
         signal.alarm(0)
+
+
+# TODO: Eventually, move it somehwere more sensible
+def poly_sat(poly, x):
+    """poly_sat
+
+    Parameters
+    ----------
+    poly : polytope
+    x : vector
+
+    Returns True if x is a member of polytope p
+    """
+#     print poly.C
+#     print poly.d
+#     print x
+    return np.all(np.dot(poly.C, x) <= poly.d)
