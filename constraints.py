@@ -90,7 +90,7 @@ class IntervalCons(Constraints):
         return ' and '.join(s)
 
     def any_sat(self, x_array):
-        return np.logical_and.reduce(self.sat(x_array), 0)
+        return np.logical_or.reduce(self.sat(x_array), 0)
 
     def sat(self, x_array):
         res_l = x_array >= self.l
