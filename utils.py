@@ -18,6 +18,7 @@ import numpy as np
 import err
 import fileops as fops
 
+
 def pairwise(iterable):
     '''s -> (s0,s1), (s1,s2), (s2, s3), ...'''
 
@@ -36,7 +37,7 @@ def strict_call(*args, **kwargs):
     ret_val = call(*args, **kwargs)
     if ret_val != 0:
         raise err.Fatal(
-        'call() returned non-zero return value: {}'.format(ret_val))
+            'call() returned non-zero return value: {}'.format(ret_val))
 
 
 class CallError(Exception):
@@ -62,10 +63,8 @@ def strict_call_get_op(*args, **kwargs):
         sys.stdout.flush()
         raise CallError(error_msg)
 
-    # TODO: what is op?
-    # print op
-
     return op
+
 
 def call_get_op(*args, **kwargs):
     try:
@@ -78,6 +77,7 @@ def call_get_op(*args, **kwargs):
         sys.stdout.flush()
 
     return op
+
 
 class Unique(object):
 
@@ -220,7 +220,7 @@ def while_max_iter(MAX):
     return f
 
 
-#################### Unfinished
+# ################### Unfinished
 class PrintSteady():
     def __init__(self):
         self.t = Terminal()
@@ -239,7 +239,7 @@ def demo_print_steady():
             PrintSteady(str(i))
             time.sleep(0.1)
     print('')
-#################### /Unfinished
+# ################### /Unfinished
 
 
 def pause(msg=''):
@@ -248,9 +248,11 @@ def pause(msg=''):
         prompt = '{}: {}'.format(msg, prompt)
     raw_input(prompt)
 
+
 def inf_list(x):
     while True:
         yield x
+
 
 def print(*args, **kwargs):
     """custom print() function."""
