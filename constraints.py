@@ -169,6 +169,24 @@ class IntervalCons(Constraints):
         d = np.hstack([self.h, -self.l])
         return C, d
 
+    def smt2(self, x, smt_And):
+        """smt2
+
+        Parameters
+        ----------
+        x : list of smt vars
+        smt_And : smt And function
+
+        Returns
+        -------
+        Smt Expression
+        """
+        ic = self
+        cons_list = (map((lambda x, c: x <= c), x, ic.h) +
+                     map((lambda x, c: x >= c), x, ic.l)
+                     )
+        return smt_And(cons_list)
+
     def rect(self):
         """Converts to rectangular representation.
            Returns: (corner, length)
