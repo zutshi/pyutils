@@ -17,33 +17,40 @@ class Constraints(object):
         pass
 
 
+def top2ic(n):
+    return IntervalCons([-np.inf]*n, [np.inf]*n)
+
+
 class IntervalCons(Constraints):
+    @staticmethod
+    def concatenate(ic1, ic2):
+        return IntervalCons(
+                np.hstack((ic1.l, ic2.l)),
+                np.hstack((ic1.h, ic2.h))
+                )
 
     def __init__(self, l, h):
-        if type(h) != np.ndarray or type(l) != np.ndarray:
+        #if type(h) != np.ndarray or type(l) != np.ndarray:
+        try:
+            self.l = np.asarray(l)
+            self.h = np.asarray(h)
+        except:
             raise ConstraintsError(
-                    'interval constraints should be expressed as np.ndarray expected'
+                    'interval constraints should be convertible to numpy arrays'
                     )
-        self.h = h
-        self.l = l
-        self.dim = len(self.l)
+        self.dim = self.l.size
         self.sanity_check()
 
     # sanity check
-
     def sanity_check(self):
-        for (i, j) in zip(self.l, self.h):
-            if i > j:
+        if not (self.l.ndim == 1 and self.h.ndim == 1):
+            raise ConstraintsError('dimension is not 1!')
 
-                # # ##!!##logger.debug('IntervalCons sanity check failure!: l > h')
-                # # ##!!##logger.debug('l = {}, h = {}'.format(self.l, self.h))
+        if self.l.size != self.h.size:
+            raise ConstraintsError('dimension mismatch!')
 
-                raise ConstraintsError('malformed interval!')
-        if len(self.l) != len(self.h):
-            raise ConstraintsError('dimension mismatch between bounds!')
-
-    def dim(self):
-        return len(self.h)
+        if not all(self.l <= self.h):
+            raise ConstraintsError('malformed interval!')
 
     def scaleNround(self, CONVERSION_FACTOR):
         raise ConstraintsError('#$%^$&#%#&%$^$%^$^#!@$')
@@ -192,14 +199,20 @@ class IntervalCons(Constraints):
            Returns: (corner, length)
            Useful for plotting with matplotlib
         """
-        if self.dim != 2:
-            raise ConstraintsError('must be 2 dim for rect conversions')
         return self.l, (self.h - self.l)
 
     def sample_UR(self, N):
         random_arr = np.random.rand(N, self.dim)
         x_array = self.l + random_arr * (self.h - self.l)
         return x_array
+
+    #TODO: Might be slow...
+    def __hash__(self):
+        return hash(tuple(np.concatenate((self.l, self.h))))
+
+    def __eq__(self, ic):
+        assert(isinstance(ic, IntervalCons))
+        return all(ic.l == self.l) and all(ic.h == self.h)
 
     def __repr__(self):
         return '{},{}'.format(str(self.l), str(self.h))
