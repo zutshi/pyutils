@@ -20,6 +20,18 @@ class Fatal(Exception):
 #     exit(-1)
 
 WARN_STR = '{} :{}::WARNING: {}'
+IMP_STR = '{} :{}::IMPORTANT: {}'
+
+
+def imp(msg):
+    """ Print an important messsage
+    """
+    callers_frame_idx = 1
+    (frame, filename, lineno,
+     function_name, lines, index) = inspect.getouterframes(
+                                         inspect.currentframe())[callers_frame_idx]
+    msg_ = IMP_STR.format(filename, lineno, msg)
+    print(term.red(msg_))
 
 
 def warn(msg):
