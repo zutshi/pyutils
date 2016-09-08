@@ -13,7 +13,6 @@ import subprocess
 import sys
 from blessed import Terminal
 import signal
-import numpy as np
 
 import err
 import fileops as fops
@@ -158,6 +157,10 @@ def decorate(s):
     return '=' * 20 + '\n' + str(s) + '\n' + '=' * 20
 
 
+def colorize(msg, t=Terminal()):
+    return t.blue(msg)
+
+
 def memodict(f):
     """ Memoization decorator for a function taking a single argument """
     class memodict(dict):
@@ -290,7 +293,7 @@ class timeout:
 
 
 # TODO: Eventually, move it somehwere more sensible
-def poly_sat(poly, x):
+def poly_sat(poly, x, tol=0):
     """poly_sat
 
     Parameters
@@ -303,4 +306,22 @@ def poly_sat(poly, x):
 #     print poly.C
 #     print poly.d
 #     print x
+    import numpy as np
     return np.all(np.dot(poly.C, x) <= poly.d)
+
+
+def ceil(x, ceil_fn):
+    """A ceil function which tries to detect floating point issues
+
+    For Ex. np.ceil(.2*3/.2) = 4
+        But should be 3!
+        The detection is done by using a tolerance to estimate that a
+        floating point error has likely occured
+    """
+    tol = 0.9999999
+
+    # if the difference between x and ceil(x) is more than ~ 1, error
+    # has occured
+    ceil_x = ceil_fn(x)
+    error = ceil_x - x > tol
+    return (ceil_x - 1 if error else ceil_x)
