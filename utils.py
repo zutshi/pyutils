@@ -13,6 +13,9 @@ import subprocess
 import sys
 from blessed import Terminal
 import signal
+import functools
+import numpy as np
+
 
 import err
 import fileops as fops
@@ -168,6 +171,89 @@ def memodict(f):
             ret = self[key] = f(key)
             return ret
     return memodict().__getitem__
+
+
+# https://wiki.python.org/moin/PythonDecoratorLibrary#Memoize
+class Memoized(object):
+    '''Decorator. Caches a function's return value each time it is called.
+    If called later with the same arguments, the cached value is returned
+    (not reevaluated).
+    '''
+    def __init__(self, func):
+        self.func = func
+        self.cache = {}
+
+    def __call__(self, *args):
+        if not isinstance(args, collections.Hashable):
+            # uncacheable. a list, for instance.
+            # better to not cache than blow up.
+            err.warn('unable to cache!')
+            return self.func(*args)
+        if args in self.cache:
+            return self.cache[args]
+        else:
+            value = self.func(*args)
+            self.cache[args] = value
+            return value
+
+    def __repr__(self):
+        '''Return the function's docstring.'''
+        return self.func.__doc__
+
+    def __get__(self, obj, objtype):
+        '''Support instance methods.'''
+        return functools.partial(self.__call__, obj)
+
+
+# note that this decorator ignores **kwargs
+def memoize(obj):
+    cache = obj.cache = {}
+
+    #@functools.wraps(obj)
+    def memoizer(*args, **kwargs):
+        if args not in cache:
+            cache[args] = obj(*args, **kwargs)
+        return cache[args]
+    return memoizer
+
+
+def my_fast_str(arg):
+    """if the arguement is a numpy array, uses tostring instead
+
+    Parameters
+    ----------
+    *args :
+
+    Returns
+    -------
+
+    Notes
+    ------
+    """
+    try:
+        iter(arg)
+        s = []
+        for a in arg:
+            if isinstance(a, np.ndarray):
+                s += a.tostring()
+            else:
+                s += str(a)
+    except TypeError:
+            return str(arg)
+
+    return ''.join(s)
+
+
+def memoize2(obj):
+    cache = obj.cache = {}
+
+    #@functools.wraps(obj)
+    def memoizer(*args, **kwargs):
+        key = my_fast_str(args) + str(kwargs)
+        if key not in cache:
+            cache[key] = obj(*args, **kwargs)
+        return cache[key]
+    return memoizer
 
 
 def assert_no_Nones(self):
