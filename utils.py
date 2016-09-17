@@ -11,8 +11,14 @@ import collections
 from subprocess import call
 import subprocess
 import sys
-from blessed import Terminal
 import signal
+#import shelve
+import hashlib
+#import pickle
+import atexit
+import cPickle
+
+from blessed import Terminal
 import functools
 import numpy as np
 
@@ -165,7 +171,8 @@ def colorize(msg, t=Terminal()):
 
 
 def memodict(f):
-    """ Memoization decorator for a function taking a single argument """
+    """ Memoization decorator for a function taking a single argument.
+    Supposed to be very fast..."""
     class memodict(dict):
         def __missing__(self, key):
             ret = self[key] = f(key)
@@ -173,81 +180,104 @@ def memodict(f):
     return memodict().__getitem__
 
 
-# https://wiki.python.org/moin/PythonDecoratorLibrary#Memoize
-class Memoized(object):
-    '''Decorator. Caches a function's return value each time it is called.
-    If called later with the same arguments, the cached value is returned
-    (not reevaluated).
-    '''
-    def __init__(self, func):
-        self.func = func
-        self.cache = {}
-
-    def __call__(self, *args):
-        if not isinstance(args, collections.Hashable):
-            # uncacheable. a list, for instance.
-            # better to not cache than blow up.
-            err.warn('unable to cache!')
-            return self.func(*args)
-        if args in self.cache:
-            return self.cache[args]
-        else:
-            value = self.func(*args)
-            self.cache[args] = value
-            return value
-
-    def __repr__(self):
-        '''Return the function's docstring.'''
-        return self.func.__doc__
-
-    def __get__(self, obj, objtype):
-        '''Support instance methods.'''
-        return functools.partial(self.__call__, obj)
-
-
-# note that this decorator ignores **kwargs
-def memoize(obj):
-    cache = obj.cache = {}
-
-    #@functools.wraps(obj)
-    def memoizer(*args, **kwargs):
-        if args not in cache:
-            cache[args] = obj(*args, **kwargs)
-        return cache[args]
-    return memoizer
-
-
 def my_fast_str(arg):
-    """if the arguement is a numpy array, uses tostring instead
+    """if the arguement is a numpy array, uses tostring instead.
+    Made specially as a hash func to be used with memoization when
+    numpy arrays are involved.
+    """
+    if isinstance(arg, collections.Iterable):
+        #s = [a.tostring() if isinstance(a, np.ndarray) else str(a)
+        s = [hashlib.sha1(a).hexdigest() if isinstance(a, np.ndarray) else str(a)
+             for a in arg]
+        return ''.join(s)
+    else:
+        return str(arg)
 
-    Parameters
-    ----------
-    *args :
 
-    Returns
-    -------
+# TODO: Remove these non sense methods. Methods which have no realtion
+# to the objects, should be class/static methods and this issue should
+# never arrise
+def memoize_hash_method(args, kwargs):
+    """hash function for memoizing methods when the objects don't
+    matter: ignores self!!
+    """
+    return my_fast_str(args[1:]) + str(kwargs)
 
+
+def memoize_hash_fun(args, kwargs):
+    """hash function for memoizing!!
+    """
+    return my_fast_str(args) + str(kwargs)
+
+
+def memoize2disk(hash_fun):
+    """Memoizing decorator which saves to the disk
+    """
+    def memoize2disk_(obj):
+        CACHE_PATH = './cache'
+        fops.make_dir(CACHE_PATH)
+
+        cache_fname = obj.__module__ + obj.__name__
+        cachepath = fops.construct_path(cache_fname, CACHE_PATH)
+
+        def dump_cache():
+            print('writing memoization cache to disk...')
+            fops.write_data(cachepath, cPickle.dumps(cache, 2))
+
+        try:
+            print('loading memoization cache from disk...')
+            cache = cPickle.loads(fops.get_data(cachepath))
+            #cache = {}
+        except:
+            #print('Could not open cache file!')
+            # Every object should have its own cache?
+            # Or one for all functions accrosss all objects of the class?
+            #cache = obj.cache = {}
+            cache = {}
+
+        atexit.register(dump_cache)
+
+        #@functools.wraps(obj)
+        def memoizer(*args, **kwargs):
+            key = hash_fun(args, kwargs)
+            if key not in cache:
+                cache[key] = obj(*args, **kwargs)
+            return cache[key]
+        return memoizer
+    return memoize2disk_
+
+
+# Understand this better....
+# # https://gist.github.com/codysoyland/267733/
+# class Memoize2Disk(object):
+#     def __init__(self, func):
+#         self.func = func
+#         self.memoized = {}
+#         self.method_cache = {}
+#     def __call__(self, *args):
+#         return self.cache_get(self.memoized, args,
+#             lambda: self.func(*args))
+#     def __get__(self, obj, objtype):
+#         return self.cache_get(self.method_cache, obj,
+#             lambda: self.__class__(functools.partial(self.func, obj)))
+#     def cache_get(self, cache, key, func):
+#         try:
+#             return cache[key]
+#         except KeyError:
+#             cache[key] = func()
+#             return cache[key]
+
+# Good function to memoize without using disk
+def memoize2(obj):
+    """memoize2
     Notes
     ------
+    Memoize functions. Do not use with object methods or class methods
+    as it will not save associated variables.
     """
-    try:
-        iter(arg)
-        s = []
-        for a in arg:
-            if isinstance(a, np.ndarray):
-                s += a.tostring()
-            else:
-                s += str(a)
-    except TypeError:
-            return str(arg)
-
-    return ''.join(s)
-
-
-def memoize2(obj):
     cache = obj.cache = {}
 
-    #@functools.wraps(obj)
+    @functools.wraps(obj)
     def memoizer(*args, **kwargs):
         key = my_fast_str(args) + str(kwargs)
         if key not in cache:
