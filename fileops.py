@@ -94,7 +94,17 @@ def is_dir_empty(dir_path):
 
 
 def make_dir(dir_path):
-    os.makedirs(dir_path)
+    try:
+        os.makedirs(dir_path)
+    except os.error as e:
+        # ignore if it fails
+        if e.errno == 17 and e.strerror == 'File exists':
+            if osp.isfile(dir_path):
+                raise FileError('The file ./cache exists. Can not create dir!')
+            # else its a dir...all OK
+        else:
+            # some other error!
+            raise e
 
 
 def make_n_change_dir(dir_path):
