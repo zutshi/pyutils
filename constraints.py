@@ -21,6 +21,25 @@ def top2ic(n):
     return IntervalCons([-np.inf]*n, [np.inf]*n)
 
 
+def zero2ic(n):
+    """Get IntervalCons of n-dim, s.t., xi = 0
+
+    Parameters
+    ----------
+    n : dimension
+
+    Returns
+    -------
+    IntervalCons([[0..0], [0..0]])
+
+    Notes
+    ------
+    Helper function
+    """
+    return IntervalCons([0.0]*n, [0.0]*n)
+
+
+# Add multiple init constructors using kwargs
 class IntervalCons(Constraints):
     @staticmethod
     def concatenate(ic1, ic2):
@@ -93,8 +112,8 @@ class IntervalCons(Constraints):
         return s
 
     def __str__(self):
-        s = self.to_c_str_list('x')
-        return ' and '.join(s)
+        s = [(round(self.l[i], 2), round(self.h[i], 2)) for i in range(self.dim)]
+        return str(s)
 
     def any_sat(self, x_array):
         return np.logical_or.reduce(self.sat(x_array), 0)

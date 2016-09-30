@@ -170,6 +170,29 @@ def colorize(msg, t=Terminal()):
     return t.blue(msg)
 
 
+class Memodict(object):
+    """ Memoization decorator for a function taking a single argument.
+    Supposed to be very fast..."""
+    def __init__(self, f):
+        self.cache = {}
+        self.f = f
+        return
+
+    def __get__(self, obj, objtype=None):
+        import functools
+        if obj is None:
+            return self.func
+        return functools.partial(self, obj)
+
+    def __call__(self, *args):
+        key = args
+        v = self.cache.get(key)
+        if v is None:
+            v = self.f(*key)
+            self.cache[key] = v
+        return v
+
+
 def memodict(f):
     """ Memoization decorator for a function taking a single argument.
     Supposed to be very fast..."""
@@ -221,12 +244,17 @@ def memoize2disk(hash_fun):
         cachepath = fops.construct_path(cache_fname, CACHE_PATH)
 
         def dump_cache():
+            cach_new_str = cPickle.dumps(cache, 2)
+            # If the cache changed in this run, save it - will have to
+            # compare dicts properly
+            #if hash(cache_str) != hash(cach_new_str):
             print('writing memoization cache to disk...')
-            fops.write_data(cachepath, cPickle.dumps(cache, 2))
+            fops.write_data(cachepath, cach_new_str)
 
         try:
             print('loading memoization cache from disk...')
-            cache = cPickle.loads(fops.get_data(cachepath))
+            cache_str = fops.get_data(cachepath)
+            cache = cPickle.loads(cache_str)
             #cache = {}
         except:
             #print('Could not open cache file!')
@@ -234,6 +262,7 @@ def memoize2disk(hash_fun):
             # Or one for all functions accrosss all objects of the class?
             #cache = obj.cache = {}
             cache = {}
+            cache_str = ''
 
         atexit.register(dump_cache)
 
