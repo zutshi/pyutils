@@ -118,13 +118,36 @@ class IntervalCons(Constraints):
     def any_sat(self, x_array):
         return np.logical_or.reduce(self.sat(x_array), 0)
 
+    # vecotirzed version of __contains__()
     def sat(self, x_array):
+        """sat
+
+        Parameters
+        ----------
+        x_array : array of state vectors
+        """
         res_l = x_array >= self.l
         res_h = x_array <= self.h
 
         # Columnwise reduction
+        land = np.logical_and(res_l, res_h)
+        if land.ndim > 1:
+            return np.logical_and.reduce(land, 1)
+        else:
+            return land
 
-        return np.logical_and.reduce(np.logical_and(res_l, res_h), 1)
+    def contains(self, ic2):
+        """ Does ic contain ic2?
+
+        Parameters
+        ----------
+        ic2 : interval cons
+
+        Returns
+        -------
+        Bool: ic \supseteq \ic2 ?
+        """
+        return np.all(self.h >= ic2.h) and np.all(self.l <= ic2.l)
 
     def __and__(self, ic):
 
@@ -144,6 +167,10 @@ class IntervalCons(Constraints):
         except ConstraintsError:
             return None
 
+    @property
+    def zero_measure(self):
+        return np.any(self.l - self.h == 0)
+
     # must return True or False
     # Use contains() for vectorized function
 
@@ -161,29 +188,6 @@ class IntervalCons(Constraints):
 
         ret_val = np.logical_and.reduce(np.logical_and(res_l, res_h), 0)
         return ret_val
-
-    # vecotirzed version of __contains__()
-
-    def contains(self, x_array):
-        """contains
-
-        Parameters
-        ----------
-        x_array : array of state vectors
-
-        Returns
-        -------
-        TODO?
-        """
-
-        # print x.shape, x
-
-        res_l = x_array >= self.l
-        res_h = x_array <= self.h
-
-        # The axis used is different from __contains__()
-
-        return np.logical_and.reduce(np.logical_and(res_l, res_h), 1)
 
     def poly(self):
         '''converts ival cons to polyhedral constrains.
