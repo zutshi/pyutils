@@ -402,6 +402,11 @@ def inf_list(x):
         yield x
 
 
+def eprint(*args, **kwargs):
+    """prints messages on stderror"""
+    return print(*args, file=sys.stderr, **kwargs)
+
+
 def print(*args, **kwargs):
     """custom print() function."""
     # A hack. Look inside and if args is empty, do not do anything,
