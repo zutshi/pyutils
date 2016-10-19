@@ -154,9 +154,28 @@ def get_non_blank_lines(filename):
         return non_blank_lines
 
 
-# just a wrapper
-def open_file(file_path, mode):
-    return open(file_path, mode)
+class StreamWrite(object):
+    """A class for stream writing a file"""
+    def __init__(self, file_path, mode='w'):
+        #print('init')
+        self.fd = open(file_path, mode)
+        return
+
+    def write(self, data):
+        #print('write')
+        self.fd.write(data)
+        return
+
+    def close_file(self):
+        self.fd.close()
+
+    def __enter__(self):
+        #print('enter')
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        #print('exit')
+        self.close_file()
 
 
 def compute_hash(file_path):
