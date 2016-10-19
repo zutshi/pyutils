@@ -154,6 +154,28 @@ def get_non_blank_lines(filename):
         return non_blank_lines
 
 
+class ReadLine(object):
+    """A class for reading a file line by line"""
+    def __init__(self, file_path, mode='r'):
+        self.fd = open(file_path, mode)
+        return
+
+    def read(self):
+        #print('write')
+        return self.fd.readline()
+
+    def close_file(self):
+        self.fd.close()
+
+    def __enter__(self):
+        #print('enter')
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        #print('exit')
+        self.close_file()
+
+
 class StreamWrite(object):
     """A class for stream writing a file"""
     def __init__(self, file_path, mode='w'):
