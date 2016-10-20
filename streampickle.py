@@ -6,10 +6,12 @@ Implements stream writing of data after pcikling and compressing them.
 # https://www.python.org/doc/essays/list2str/
 
 import cPickle as cP
+import re
 
 import zlib
 
 import fileops as fops
+import err
 
 from IPython import embed
 
@@ -187,9 +189,18 @@ class PickleStreamUnCompressor(object):
         """
         self.stream = stream
         self.zo = zlib.decompressobj()
+        self.buf = ''
         return
 
-    def get_data(self):
+    def get_data(self, sd):
+        """gets arbitrary amounts of data
+        Older function which required you to do buffer management.
+        The new ones are get_data_size() and get_data_re().
+
+        Returns
+        -------
+        Returns string of data or '' when the stream is empty.
+        """
         ucdata = ''
         while not ucdata:
             cdata = self.stream.readline()
@@ -198,7 +209,81 @@ class PickleStreamUnCompressor(object):
             ucdata = self.zo.decompress(cdata)
         return ucdata
 
+    def get_data_size(self, size):
+        """
+
+        Parameters
+        ----------
+        size : size of data to be retuned.
+               It is actually the length of the string.
+
+        Returns
+        -------
+        s: string, such that len(s) == size
+        if more data than left in the stream is requested, an
+        exception is raised.
+
+        Notes
+        ------
+        """
+        assert(type(size) == int)
+        ucdata = self.buf
+        while len(ucdata) < size:
+            cdata = self.stream.readline()
+            if cdata == '':
+                ucdata += self.zo.flush()
+                if len(ucdata) != size:
+                    raise err.Fatal('size is bigger than left over data!')
+            else:
+                ucdata += self.zo.decompress(cdata)
+        data, self.buf = ucdata[0:size], ucdata[size:]
+        return data
+
+    def get_data_re(self, re):
+        """Gets data which matches re
+        A match is expected to be found, if not, throws an error.
+
+        Parameters
+        ----------
+        re : compiled regex against which is matched
+
+        Returns
+        -------
+
+        Notes
+        ------
+        """
+        ucdata = self.buf
+        while True:
+            cdata = self.stream.readline()
+            if cdata == '':
+                ucdata += self.zo.flush()
+                if ucdata == '':
+                    return ''
+                mo = re.search(ucdata)
+                if mo is None:
+                    raise err.Fatal('reached end of stream!')
+                break
+            else:
+                ucdata += self.zo.decompress(cdata)
+                mo = re.search(ucdata)
+
+        data = ucdata[mo.start():mo.end()]
+        self.buf = ucdata[mo.end():]
+        return data
+
     def uncompressor(self):
+        r = re.compile('\n[0-9]*\n')
+        data = self.get_data_re(r)
+        while data:
+            l = int(data[1:-1])
+            pickle = self.get_data_size(l)
+            yield cP.loads(pickle)
+            data = self.get_data_re(r)
+        return
+
+    def uncompressor_simpler(self):
+        """Older function which did buffer management itself"""
         DELIM = '\n'
         MT = ''
         lbuf = MT
@@ -218,7 +303,6 @@ class PickleStreamUnCompressor(object):
             pickle, partial_pickle = buf[0:l], buf[l:]
             yield cP.loads(pickle)
             lbuf = partial_pickle
-
         return
 #     def uncompressor(self):
 #         notdone = True
