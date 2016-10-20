@@ -160,9 +160,13 @@ class ReadLine(object):
         self.fd = open(file_path, mode)
         return
 
-    def read(self):
+    def readline(self):
         #print('write')
         return self.fd.readline()
+
+    def read(self, size=-1):
+        #print('write')
+        return self.fd.read(-1)
 
     def close_file(self):
         self.fd.close()
