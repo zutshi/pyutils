@@ -272,7 +272,9 @@ class PickleStreamUnCompressor(object):
         self.buf = ucdata[mo.end():]
         return data
 
-    def uncompressor(self):
+    def uncompressor_simpler(self):
+        """Diagnose bug:
+            ./scamr.py -f ../examples/vdp/vanDerPol.tst --simulate 100 --prop-check --par --seed 2"""
         r = re.compile('\n[0-9]*\n')
         data = self.get_data_re(r)
         while data:
@@ -282,7 +284,7 @@ class PickleStreamUnCompressor(object):
             data = self.get_data_re(r)
         return
 
-    def uncompressor_simpler(self):
+    def uncompressor(self):
         """Older function which did buffer management itself"""
         DELIM = '\n'
         MT = ''
