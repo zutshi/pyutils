@@ -192,7 +192,7 @@ class PickleStreamUnCompressor(object):
         self.buf = ''
         return
 
-    def get_data(self, sd):
+    def get_data(self):
         """gets arbitrary amounts of data
         Older function which required you to do buffer management.
         The new ones are get_data_size() and get_data_re().
