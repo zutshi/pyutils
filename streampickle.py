@@ -11,6 +11,8 @@ import zlib
 
 import fileops as fops
 
+from IPython import embed
+
 
 # Problem is, the delmiter is not unique. And the pickled data can
 # have characters which mimic DELIM. Hence, does not look lik ethere
@@ -187,26 +189,60 @@ class PickleStreamUnCompressor(object):
         self.zo = zlib.decompressobj()
         return
 
-    def uncompressor(self):
-        notdone = True
-        while True:
+    def get_data(self):
+        ucdata = ''
+        while not ucdata:
             cdata = self.stream.readline()
-            if cdata == str(''):
-                break
-            ucdata = str(self.zo.decompress(cdata))
-            if not ucdata:
-                continue
-            while notdone:
-                _, sz, partial_pickle = ucdata.split(str('\n'), 2)
-                assert(_ == '')
-                sz = int(sz)
-                while len(partial_pickle) < sz:
-                    partial_pickle += self.zo.decompress(self.stream.readline())
-                pickle, partial_pickle = partial_pickle[0:sz], partial_pickle[sz:]
-                yield cP.loads(pickle)
-                notdone = bool(partial_pickle)
-                ucdata = str(partial_pickle)
+            if cdata == '':
+                return self.zo.flush()
+            ucdata = self.zo.decompress(cdata)
+        return ucdata
+
+    def uncompressor(self):
+        DELIM = '\n'
+        MT = ''
+        lbuf = MT
+        while True:
+            while lbuf.count(DELIM) < 2:
+                data = self.get_data()
+                lbuf += data
+                if data == MT:
+                    return
+            _, l, buf = lbuf.split(DELIM, 2)
+            l = int(l)
+            assert(_ == MT)
+            while len(buf) < l:
+                D = self.get_data()
+                assert(D != MT)
+                buf += D
+            pickle, partial_pickle = buf[0:l], buf[l:]
+            yield cP.loads(pickle)
+            lbuf = partial_pickle
+
         return
+#     def uncompressor(self):
+#         notdone = True
+#         empty = str('')
+#         DELIM = str('\n')
+#         while True:
+#             ucdata = self.get_data()
+#             partial_pickle = empty
+#             while notdone:
+#                 try:
+#                     _, sz, partial_pickle = ucdata.split(DELIM, 2)
+#                 except:
+#                     embed()
+#                 assert(_ == empty)
+#                 assert(partial_pickle != empty)
+#                 sz = int(sz)
+#                 assert(sz > 0)
+#                 while len(partial_pickle) < sz:
+#                     partial_pickle += self.get_data()#self.zo.decompress(self.stream.readline())
+#                 pickle, partial_pickle = partial_pickle[0:sz], partial_pickle[sz:]
+#                 yield cP.loads(pickle)
+#                 notdone = bool(partial_pickle)
+#                 ucdata = str(partial_pickle)
+#         return
 
 
 class PickleStreamCompressor(object):
