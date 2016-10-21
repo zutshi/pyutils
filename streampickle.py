@@ -254,27 +254,30 @@ class PickleStreamUnCompressor(object):
         ------
         """
         ucdata = self.buf
-        while True:
+        mo = re.search(ucdata)
+        while mo is None:
             cdata = self.stream.readline()
             if cdata == '':
                 ucdata += self.zo.flush()
+                # Different from get_data_size, because this function
+                # assumes that the end of data stream is not known.
                 if ucdata == '':
                     return ''
+                # if you get some data, there must be a match
                 mo = re.search(ucdata)
-                if mo is None:
-                    raise err.Fatal('reached end of stream!')
-                break
+                assert(mo is not None)
             else:
                 ucdata += self.zo.decompress(cdata)
+                # if you get some data, there must be a match
                 mo = re.search(ucdata)
 
         data = ucdata[mo.start():mo.end()]
         self.buf = ucdata[mo.end():]
         return data
 
-    def uncompressor_simpler(self):
+    def uncompressor(self):
         """Diagnose bug:
-            ./scamr.py -f ../examples/vdp/vanDerPol.tst --simulate 100 --prop-check --par --seed 2"""
+        ./scamr.py -f ../examples/vdp/vanDerPol.tst --simulate 100 --prop-check --par --seed 2"""
         r = re.compile('\n[0-9]*\n')
         data = self.get_data_re(r)
         while data:
@@ -284,7 +287,7 @@ class PickleStreamUnCompressor(object):
             data = self.get_data_re(r)
         return
 
-    def uncompressor(self):
+    def uncompressor2(self):
         """Older function which did buffer management itself"""
         DELIM = '\n'
         MT = ''
