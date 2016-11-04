@@ -210,6 +210,22 @@ class IntervalCons(Constraints):
     def __neg__(self):
         return IntervalCons(-self.h, -self.l)
 
+    def __add__(self, c):
+        if isinstance(c, IntervalCons):
+            l, h = self.l + c.l, self.h + c.h
+        else:
+            l, h = self.l + c, self.h + c
+        return IntervalCons(l, h)
+
+    def __radd__(self, c):
+        return self + c
+
+    def __sub__(self, c):
+        return self - c
+
+    def __rsub__(self, c):
+        return -self + c
+
     #dot product with a numpy vector c
     def __mul__(self, c):
         iv = self
@@ -235,6 +251,9 @@ class IntervalCons(Constraints):
         prod = IntervalCons.from_array_like(temp)
         assert(prod == post_mult())
         return prod
+
+    def __rmul__(self, c):
+        return self * c
 
     @property
     def zero_measure(self):
@@ -307,7 +326,7 @@ class IntervalCons(Constraints):
         return all(ic.l == self.l) and all(ic.h == self.h)
 
     def __repr__(self):
-        return '{},{}'.format(str(self.l), str(self.h))
+        return '[{},{}]'.format(str(self.l), str(self.h))
 
 
 #        s = '[' + str(self.l) + ',' + str(self.h) + ']'
