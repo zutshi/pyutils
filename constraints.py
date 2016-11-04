@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import itertools as it
+
 import numpy as np
 
 logger = logging.getLogger(__name__)
@@ -18,6 +20,16 @@ class Constraints(object):
 
 
 def top2ic(n):
+    """Get interval constraints equivalent to the Universal set
+
+    Parameters
+    ----------
+    n : dimension
+
+    Returns
+    -------
+    IntervalCons([[-inf..-inf], [inf..inf]])
+    """
     return IntervalCons([-np.inf]*n, [np.inf]*n)
 
 
@@ -31,10 +43,6 @@ def zero2ic(n):
     Returns
     -------
     IntervalCons([[0..0], [0..0]])
-
-    Notes
-    ------
-    Helper function
     """
     return IntervalCons([0.0]*n, [0.0]*n)
 
@@ -42,13 +50,43 @@ def zero2ic(n):
 # Add multiple init constructors using kwargs
 class IntervalCons(Constraints):
     @staticmethod
+    def dot(iv1, iv2):
+        iv1_arr, iv2_arr = iv1.to_numpy_array(), iv2.to_numpy_array()
+        prod = np.asarray([np.prod(list(it.product(ri, rj)), axis=1) for ri, rj in zip(iv1_arr, iv2_arr)])
+        return IntervalCons(np.min(prod, axis=1), np.max(prod, axis=1))
+
+    @staticmethod
     def concatenate(ic1, ic2):
         return IntervalCons(
                 np.hstack((ic1.l, ic2.l)),
                 np.hstack((ic1.h, ic2.h))
                 )
 
-    def __init__(self, l, h):
+    @staticmethod
+    def from_array_like(x):
+        """Builds a interval constraint from a structure resembling
+        [xa = [x0l, x1l, x2l, ...], xb = [x0h, x1h, x2h, ...]]
+
+        Parameters
+        ----------
+        x : array like iterable
+
+        Returns
+        -------
+        IntervalCons(xl, xh)
+
+        Notes
+        ------
+        Automatically finds xil = min(xai, xbi), xih = max(xai, xbi)
+        in order to build a proper interval constraint reprsentation.
+        """
+        xa, xb = x
+        temp = [(min(xai, xbi), max(xai, xbi)) for xai, xbi in zip(xa, xb)]
+        # Take the transpose
+        xl, xh = zip(*temp)
+        return IntervalCons(xl, xh)
+
+    def __init__(self, l, h, sanity_check=True):
         #if type(h) != np.ndarray or type(l) != np.ndarray:
         try:
             self.l = np.asarray(l)
@@ -58,7 +96,8 @@ class IntervalCons(Constraints):
                     'interval constraints should be convertible to numpy arrays'
                     )
         self.dim = self.l.size
-        self.sanity_check()
+        if sanity_check:
+            self.sanity_check()
 
     # sanity check
     def sanity_check(self):
@@ -150,6 +189,7 @@ class IntervalCons(Constraints):
         return np.all(self.h >= ic2.h) and np.all(self.l <= ic2.l)
 
     def __and__(self, ic):
+        """ overloaded & """
 
         # check dimensions
 
@@ -166,6 +206,35 @@ class IntervalCons(Constraints):
             return IntervalCons(l, h)
         except ConstraintsError:
             return None
+
+    def __neg__(self):
+        return IntervalCons(-self.h, -self.l)
+
+    #dot product with a numpy vector c
+    def __mul__(self, c):
+        iv = self
+        c = np.asarray(c)
+
+        temp = iv.to_numpy_array().T * c
+
+        # only used to check assertion
+        def post_mult():
+            if c.size == 1:
+                if c < 0:
+                    prod = IntervalCons(temp[1], temp[0])
+                else:
+                    prod = IntervalCons(temp[0], temp[1])
+            else:
+                for idx, i in enumerate(c):
+                    # if i is -ve, swap
+                    if i < 0:
+                        temp[0][idx], temp[1][idx] = temp[1][idx], temp[0][idx]
+                prod = IntervalCons(temp[0], temp[1])
+            return prod
+
+        prod = IntervalCons.from_array_like(temp)
+        assert(prod == post_mult())
+        return prod
 
     @property
     def zero_measure(self):
