@@ -108,7 +108,7 @@ class IntervalCons(Constraints):
             raise ConstraintsError('dimension mismatch!')
 
         if not all(self.l <= self.h):
-            raise ConstraintsError('malformed interval!')
+            raise ConstraintsError('malformed interval: l:{}, h:{}'.format(self.l, self.h))
 
     def scaleNround(self, CONVERSION_FACTOR):
         raise ConstraintsError('#$%^$&#%#&%$^$%^$^#!@$')
