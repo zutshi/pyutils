@@ -17,6 +17,7 @@ import hashlib
 #import pickle
 import atexit
 import cPickle
+import time
 
 from blessed import Terminal
 import functools
@@ -381,7 +382,6 @@ class PrintSteady():
 
 
 def demo_print_steady():
-    import time
     print('num:', end='')
     for i in range(10):
             PrintSteady(str(i))
