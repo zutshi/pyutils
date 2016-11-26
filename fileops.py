@@ -6,6 +6,7 @@ import logging
 import glob
 import stat
 import hashlib
+import time
 
 
 class FileError(Exception):
@@ -20,8 +21,10 @@ FILE_MASK = 0b01
 def size(file_path):
     return os.path.getsize(file_path)
 
+
 def delete(file_path):
         os.remove(file_path)
+
 
 def enumerate_dir(root_dir, mask=0b11, filter_fun=lambda x: True, recurse=False):
     if recurse:
@@ -209,3 +212,25 @@ def compute_hash(file_path):
     m = hashlib.md5(data)
     md5sum = m.hexdigest()
     return md5sum
+
+
+def time_string():
+    ''' Generates a string from current time, which is a valid
+    filename on both windows and unix
+
+    example return string: 25_Nov_2016___23_25_25
+    '''
+
+    # get current time
+    t = time.ctime()
+    # remove colons
+    t1 = t.replace(':', '_')
+    # split into a list
+    t2 = t1.split()
+    # get year
+    year = t2[-1]
+    # remove day and year
+    t3 = t2[1:-1]
+    # interchange month [0] and date [1]
+    t4 = [t3[1], t3[0], year, '_'] + t3[2:]
+    return '_'.join(t4)
