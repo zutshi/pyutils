@@ -28,6 +28,7 @@ import err
 import fileops as fops
 
 
+# XXX: checkout the function toolz.itertoolz.partition()
 def pairwise(iterable):
     '''s -> (s0,s1), (s1,s2), (s2, s3), ...'''
 
@@ -164,7 +165,7 @@ class Singleton:
 
 
 def decorate(s):
-    return '=' * 20 + '\n' + str(s) + '\n' + '=' * 20
+    return '\n{border}\n{s}\n{border}'.format(border='=' * 20, s=str(s))
 
 
 def colorize(msg, t=Terminal()):

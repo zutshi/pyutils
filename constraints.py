@@ -3,6 +3,7 @@
 
 import logging
 import itertools as it
+import math
 
 import numpy as np
 
@@ -95,9 +96,14 @@ class IntervalCons(Constraints):
             raise ConstraintsError(
                     'interval constraints should be convertible to numpy arrays'
                     )
-        self.dim = self.l.size
         if sanity_check:
             self.sanity_check()
+
+        # handle the single dimension case...
+        if self.l.ndim == 0:
+            self.l = np.asarray([l])
+            self.h = np.asarray([h])
+        self.dim = self.l.size
 
     # sanity check
     def sanity_check(self):
@@ -107,7 +113,7 @@ class IntervalCons(Constraints):
         if self.l.size != self.h.size:
             raise ConstraintsError('dimension mismatch!')
 
-        if not all(self.l <= self.h):
+        if not np.all(self.l <= self.h):
             raise ConstraintsError('malformed interval: l:{}, h:{}'.format(self.l, self.h))
 
     def scaleNround(self, CONVERSION_FACTOR):
@@ -149,10 +155,6 @@ class IntervalCons(Constraints):
             s.append(ts_ge.format(var_name, idx, l))
             s.append(ts_le.format(var_name, idx, h))
         return s
-
-    def __str__(self):
-        s = [(round(self.l[i], 2), round(self.h[i], 2)) for i in range(self.dim)]
-        return str(s)
 
     def any_sat(self, x_array):
         return np.logical_or.reduce(self.sat(x_array), 0)
@@ -255,6 +257,40 @@ class IntervalCons(Constraints):
     def __rmul__(self, c):
         return self * c
 
+    def linexpr_str(self, vs):
+        """create a list of strings of linear expressions for the
+        constraints of the form Cx <gle> d, where gle = {<=, >=}
+
+        Parameters
+        ----------
+        vs : vector of str(vars)
+
+        Returns
+        -------
+        (lbs, ubs): a tuple, where lbs is a list of lower bound linear
+        expressions (in string format) and ubs are upper bound
+        expressions
+
+        Notes
+        ------
+        """
+
+        assert(len(vs) == self.dim)
+
+        expr = "{v} {gle} {c}"
+
+        ls = (
+                expr.format(v=v, gle='>=', c=self.l[i])
+                for i, v in enumerate(vs)
+                if not math.isinf(self.l[i])
+             )
+        hs = (
+                expr.format(v=v, gle='<=', c=self.h[i])
+                for i, v in enumerate(vs)
+                if not math.isinf(self.h[i])
+             )
+        return ls, hs
+
     @property
     def zero_measure(self):
         return np.any(self.l - self.h == 0)
@@ -264,6 +300,7 @@ class IntervalCons(Constraints):
 
     def __contains__(self, x):
 
+        x = np.asarray(x)
         if x.ndim != 1:
             raise ConstraintsError('dim(x) must be 1, instead dim(x) = {}'.format(x.ndim))
 
@@ -323,11 +360,17 @@ class IntervalCons(Constraints):
 
     def __eq__(self, ic):
         assert(isinstance(ic, IntervalCons))
-        return all(ic.l == self.l) and all(ic.h == self.h)
+        return np.all(ic.l == self.l) and np.all(ic.h == self.h)
 
-    def __repr__(self):
-        return '[{},{}]'.format(str(self.l), str(self.h))
+    #def __repr__(self):
+        #return '[{},{}]'.format(str(self.l), str(self.h))
+        #s = [(self.l[i], self.h[i]) for i in range(self.dim)]
+        #s = zip(self.l, self.h)
+        #return str(s)
 
-
-#        s = '[' + str(self.l) + ',' + str(self.h) + ']'
-#        return s
+    def __str__(self):
+        #PREC = 4
+        #s = [(round(self.l[i], PREC), round(self.h[i], PREC)) for i in range(self.dim)]
+        #s = '[{}, {}]'.format(self.l, self.h)
+        s = np.vstack((self.l, self.h)).T
+        return str(s)
