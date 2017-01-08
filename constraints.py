@@ -368,9 +368,15 @@ class IntervalCons(Constraints):
         #s = zip(self.l, self.h)
         #return str(s)
 
+    def __repr__(self):
+        s = np.vstack((self.l, self.h)).T
+        return str(s).replace('\n', '')
+
     def __str__(self):
-        #PREC = 4
+        PREC = 4
         #s = [(round(self.l[i], PREC), round(self.h[i], PREC)) for i in range(self.dim)]
         #s = '[{}, {}]'.format(self.l, self.h)
+        #s = np.vstack((np.round(self.l, PREC), np.round(self.h, PREC))).T
         s = np.vstack((self.l, self.h)).T
-        return str(s)
+        # remove outer braces
+        return str(s).replace('\n', '')
