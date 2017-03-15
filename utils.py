@@ -22,6 +22,7 @@ import time
 from blessed import Terminal
 import functools
 import numpy as np
+from scipy.spatial import ConvexHull
 
 
 import err
@@ -181,7 +182,6 @@ class Memodict(object):
         return
 
     def __get__(self, obj, objtype=None):
-        import functools
         if obj is None:
             return self.func
         return functools.partial(self, obj)
@@ -298,13 +298,13 @@ def memoize2disk(hash_fun):
 #             cache[key] = func()
 #             return cache[key]
 
-# Good function to memoize without using disk
-def memoize2(obj):
+def memoize2mem(obj):
     """memoize2
     Notes
     ------
     Memoize functions. Do not use with object methods or class methods
     as it will not save associated variables.
+    Good function to memoize without using disk
     """
     cache = obj.cache = {}
 
@@ -459,6 +459,15 @@ def poly_sat(poly, x, tol=0):
 #     print x
     import numpy as np
     return np.all(np.dot(poly.C, x) <= poly.d)
+
+
+# TODO: relocate to a better file
+@memoize2mem
+def poly_v2h(x):
+    hull = ConvexHull(x)
+    eqns = hull.equations
+    C, d = eqns[:, 0:-1], eqns[:, -1]
+    return C, d
 
 
 def ceil(x, ceil_fn):
