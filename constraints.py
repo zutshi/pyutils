@@ -10,10 +10,6 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 
-class ConstraintsError(Exception):
-    pass
-
-
 class Constraints(object):
 
     def __init__(self):
@@ -93,7 +89,7 @@ class IntervalCons(Constraints):
             self.l = np.asarray(l)
             self.h = np.asarray(h)
         except:
-            raise ConstraintsError(
+            raise TypeError(
                     'interval constraints should be convertible to numpy arrays'
                     )
         if sanity_check:
@@ -108,16 +104,16 @@ class IntervalCons(Constraints):
     # sanity check
     def sanity_check(self):
         if not (self.l.ndim == 1 and self.h.ndim == 1):
-            raise ConstraintsError('dimension is not 1!')
+            raise RuntimeError('dimension is not 1!')
 
         if self.l.size != self.h.size:
-            raise ConstraintsError('dimension mismatch!')
+            raise RuntimeError('dimension mismatch!')
 
         if not np.all(self.l <= self.h):
-            raise ConstraintsError('malformed interval: l:{}, h:{}'.format(self.l, self.h))
+            raise ValueError('malformed interval: l:{}, h:{}'.format(self.l, self.h))
 
     def scaleNround(self, CONVERSION_FACTOR):
-        raise ConstraintsError('#$%^$&#%#&%$^$%^$^#!@$')
+        raise NotImplementedError('#$%^$&#%#&%$^$%^$^#!@$')
 
         # do not do inplace conversion, instead return a copy!
         # self.h = (self.h * CONVERSION_FACTOR).astype(int)
@@ -196,7 +192,7 @@ class IntervalCons(Constraints):
         # check dimensions
 
         if self.dim != ic.dim:
-            raise ConstraintsError(
+            raise RuntimeError(
                     'intersection of interval constraints: must be of same dimensions!'
                     )
 
@@ -206,7 +202,7 @@ class IntervalCons(Constraints):
         h = np.minimum(self.h, ic.h)
         try:
             return IntervalCons(l, h)
-        except ConstraintsError:
+        except ValueError:
             return None
 
     def __neg__(self):
@@ -302,7 +298,7 @@ class IntervalCons(Constraints):
 
         x = np.asarray(x)
         if x.ndim != 1:
-            raise ConstraintsError('dim(x) must be 1, instead dim(x) = {}'.format(x.ndim))
+            raise RuntimeError('dim(x) must be 1, instead dim(x) = {}'.format(x.ndim))
 
         # print x.shape, x
 

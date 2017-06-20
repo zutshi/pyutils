@@ -485,3 +485,37 @@ def ceil(x, ceil_fn):
     ceil_x = ceil_fn(x)
     error = ceil_x - x > tol
     return (ceil_x - 1 if error else ceil_x)
+
+
+def invert_mapping(d):
+    if __debug__:
+        items = d.items()
+        # Make sure duplicate mappings do not exist
+        assert(len(list(items)) == len(set(items)))
+
+    return d.__class__(map(reversed, d.items()))
+
+
+def dict_unique_add(d, k, data):
+    """If the key is already present, raise an exception
+
+    Parameters
+    ----------
+    d : dict
+    k : key
+    data : data
+    """
+
+    if __debug__:
+        # If overwrite with different value occurs
+        if k in d:
+            try:
+                if hash(d[k]) != hash(data):
+                    raise RuntimeError
+            except TypeError:
+                if d[k] != data:
+                    raise RuntimeError
+
+    d[k] = data
+
+    return None

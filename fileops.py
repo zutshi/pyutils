@@ -143,6 +143,10 @@ def append_data(filename, data):
     return
 
 
+def overwrite(filename, data):
+    return write_data(filename, data, mode='w')
+
+
 def write_data(filename, data, mode='w'):
     logger.info('writing file: {}'.format(filename))
     with open(filename, mode) as f:
