@@ -22,7 +22,7 @@ import functools
 import numpy as np
 from scipy.spatial import ConvexHull
 
-
+import logging
 logger = logging.getLogger(__name__)
 import err
 import fileops as fops
