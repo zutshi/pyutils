@@ -14,7 +14,7 @@ import signal
 import hashlib
 #import pickle
 import atexit
-import cPickle
+import pickle
 import time
 
 from blessed import Terminal
