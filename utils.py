@@ -3,8 +3,6 @@
 
 # Test for hashability of abstract state
 
-from __future__ import print_function
-import __builtin__
 import itertools
 import inspect
 import collections
@@ -25,6 +23,7 @@ import numpy as np
 from scipy.spatial import ConvexHull
 
 
+logger = logging.getLogger(__name__)
 import err
 import fileops as fops
 
@@ -408,20 +407,20 @@ def eprint(*args, **kwargs):
     return print(*args, file=sys.stderr, **kwargs)
 
 
-def print(*args, **kwargs):
-    """custom print() function."""
-    # A hack. Look inside and if args is empty, do not do anything,
-    # just call the default print function.
-    if args:
-        callers_frame_idx = 1
-        (frame, filename, lineno,
-         function_name, lines, index) = inspect.getouterframes(
-                                             inspect.currentframe())[callers_frame_idx]
-        #frameinfo = inspect.getframeinfo(inspect.currentframe())
-        basename = fops.get_file_name_from_path(filename)
-        f = kwargs.get('file', sys.stdout)
-        __builtin__.print('{}:{}::'.format(basename, lineno), end='', file=f)
-    return __builtin__.print(*args, **kwargs)
+# def print(*args, **kwargs):
+#     """custom print() function."""
+#     # A hack. Look inside and if args is empty, do not do anything,
+#     # just call the default print function.
+#     if args:
+#         callers_frame_idx = 1
+#         (frame, filename, lineno,
+#          function_name, lines, index) = inspect.getouterframes(
+#                                              inspect.currentframe())[callers_frame_idx]
+#         #frameinfo = inspect.getframeinfo(inspect.currentframe())
+#         basename = fops.get_file_name_from_path(filename)
+#         f = kwargs.get('file', sys.stdout)
+#         __builtin__.print('{}:{}::'.format(basename, lineno), end='', file=f)
+#     return __builtin__.print(*args, **kwargs)
 
 
 class TimeoutError(Exception):
@@ -519,3 +518,33 @@ def dict_unique_add(d, k, data):
     d[k] = data
 
     return None
+
+
+###############################################
+#       ## Overried print function ##         #
+#     Must be the last funtion definition     #
+###############################################
+
+
+def print(*args, **kwargs):
+    '''custom print() function.'''
+    # A hack. Look inside and if args is empty, do not do anything,
+    # Just call the default print function.
+    if args:
+        callers_frame_idx = 1
+        (frame, filename, lineno,
+         function_name, lines, index) = inspect.getouterframes(
+                                             inspect.currentframe())[callers_frame_idx]
+        #frameinfo = inspect.getframeinfo(inspect.currentframe())
+        basename = os.path.basename(filename)
+        f = kwargs.get('file', sys.stdout)
+        builtins.print('{}:{}::'.format(basename, lineno), end='', file=f)
+
+    return builtins.print(*args, **kwargs)
+
+
+def pause(msg=''):
+    prompt = 'press enter to continue...'
+    if msg != '':
+        prompt = '{}: {}'.format(msg, prompt)
+    input(prompt)

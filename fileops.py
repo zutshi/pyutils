@@ -1,5 +1,29 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+
+'''
+
+Provides OS agnostic (only tested on Linux!) file manipulation routines.
+
+
+
+Naming convention:
+
+    Given a file:
+        /home/username/mydir/samplefile.ext
+
+- fileroot: [samplefile]
+- filename/basename: [samplefile.ext]
+- ext: [ext]
+- absolute path: [/home/username/mydir/samplefile.ext]
+- dir name: [mydir]
+- absolute base path/ dir path: [/home/username/mydir/]
+
+'''
+
+#TODO: Modify the code to make sure the naming convention is followed
+
+
 import os
 import os.path as osp
 import logging
@@ -7,6 +31,7 @@ import glob
 import stat
 import hashlib
 import time
+import datetime
 
 
 class FileError(Exception):
@@ -22,8 +47,16 @@ def size(file_path):
     return os.path.getsize(file_path)
 
 
-def delete(file_path):
+def delete_if_exists(file_path):
+    try:
         os.remove(file_path)
+    except FileNotFoundError as e:
+        # ignore if the file does not exist
+        pass
+
+
+def delete(file_path):
+    os.remove(file_path)
 
 
 def enumerate_dir(root_dir, mask=0b11, filter_fun=lambda x: True, recurse=False):
@@ -218,7 +251,7 @@ def compute_hash(file_path):
     return md5sum
 
 
-def time_string():
+def time_string_old():
     ''' Generates a string from current time, which is a valid
     filename on both windows and unix
 
@@ -238,3 +271,47 @@ def time_string():
     # interchange month [0] and date [1]
     t4 = [t3[1], t3[0], year, '_'] + t3[2:]
     return '_'.join(t4)
+
+
+def time_string():
+    # t is the current time
+    t = datetime.datetime.now()
+    tstr = f'{t.day}{t.strftime("%b")}{t.year}_H{t.hour:02d}M{t.minute:02d}S{t.second:02d}M{t.microsecond:07d}'
+    return tstr
+
+
+def create_session_dir(dir_prefix, path=None):
+
+    if path is None:
+        path = os.getcwd()
+
+    tstr = time_string()
+
+    dir_name = f'{dir_prefix}_{tstr}'
+    if file_exists(dir_name):
+        logger.error(f'''A directory with the name {dir_name} already exists in
+                         the current directory!. Unhandled, exiting.''')
+        raise RuntimeError
+        # can sleep it off, but something is probably wrong if it happens
+        # time.sleep(1)
+    dir_path = construct_path(dir_name, path)
+    make_dir(dir_path)
+    return dir_path
+
+
+class Filename():
+    def __init__(self, name, ext, path, absname):
+        self.name = name
+        self.ext = ext
+        self.path = path
+        self.absname = absname
+
+    @classmethod
+    def fromabspath(cls, abspath):
+        path = get_abs_base_path(abspath)
+        name, ext = split_filename_ext(get_file_name_from_path(abspath))
+        return cls(name, ext, path)
+
+    @classmethod
+    def fromanameextpath(cls, name, ext, path):
+        return cls(name, ext, path)
