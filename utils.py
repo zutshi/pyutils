@@ -59,7 +59,7 @@ class CallError(Exception):
 def strict_call_get_op(*args, **kwargs):
     try:
         op = subprocess.check_output(stderr=subprocess.STDOUT, *args, **kwargs)
-    except subprocess.CalledProcessError, e:
+    except subprocess.CalledProcessError as e:
         term = Terminal()
 
         # print term.red(e.output)
@@ -80,7 +80,7 @@ def strict_call_get_op(*args, **kwargs):
 def call_get_op(*args, **kwargs):
     try:
         op = subprocess.check_output(stderr=subprocess.STDOUT, *args, **kwargs)
-    except subprocess.CalledProcessError, e:
+    except subprocess.CalledProcessError as e:
         term = Terminal()
 
         error_msg = e.output.decode('utf-8')

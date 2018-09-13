@@ -134,7 +134,7 @@ def get_data(filename, mode='r'):
         with open(filename, mode) as f:
             data = f.read()
             return data
-    except (OSError, IOError), e:
+    except (OSError, IOError) as e:
         raise FileError(e)
 
 
