@@ -5,7 +5,7 @@ Implements stream writing of data after pcikling and compressing them.
 # TODO: optimization
 # https://www.python.org/doc/essays/list2str/
 
-import cPickle as cP
+import pickle as cP
 import re
 
 import zlib

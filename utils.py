@@ -12,10 +12,11 @@ import sys
 import signal
 #import shelve
 import hashlib
-#import pickle
 import atexit
 import pickle
 import time
+import os
+import builtins
 
 from blessed import Terminal
 import functools
@@ -34,7 +35,7 @@ def pairwise(iterable):
 
     (a, b) = itertools.tee(iterable)
     next(b, None)
-    return itertools.izip(a, b)
+    return zip(a, b)
 
 
 def iterate_in_chunks(iterable, chunk_length):
@@ -73,7 +74,7 @@ def strict_call_get_op(*args, **kwargs):
         sys.stdout.flush()
         raise CallError(error_msg)
 
-    return op
+    return op.decode()
 
 
 def call_get_op(*args, **kwargs):
@@ -245,7 +246,7 @@ def memoize2disk(hash_fun):
         cachepath = fops.construct_path(cache_fname, CACHE_PATH)
 
         def dump_cache():
-            cach_new_str = cPickle.dumps(cache, 2)
+            cach_new_str = pickle.dumps(cache, 2)
             # If the cache changed in this run, save it - will have to
             # compare dicts properly
             #if hash(cache_str) != hash(cach_new_str):
@@ -255,7 +256,7 @@ def memoize2disk(hash_fun):
         try:
             print('loading memoization cache from disk...')
             cache_str = fops.get_data(cachepath)
-            cache = cPickle.loads(cache_str)
+            cache = pickle.loads(cache_str)
             #cache = {}
         except:
             #print('Could not open cache file!')
